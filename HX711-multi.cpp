@@ -1,9 +1,15 @@
 #include <Arduino.h>
-#include <HX711-multi.h>
+#include "HX711-multi.h"
 
-HX711MULTI::HX711MULTI(int count, byte *dout, byte pd_sck, byte gain) {
-	PD_SCK 	= pd_sck;
-	DOUT 	= dout; //TODO - make the input of dout to the function a const, or otherwise copy the values for local storage
+HX711MULTI::HX711MULTI() {
+
+}
+
+
+void HX711MULTI::setup(int count, byte *dout, byte pd_sck, byte gain)
+{
+	PD_SCK   = pd_sck;
+	DOUT  = dout; //TODO - make the input of dout to the function a const, or otherwise copy the values for local storage
 	COUNT   = count;
 
 	debugEnabled = false;
@@ -13,9 +19,7 @@ HX711MULTI::HX711MULTI(int count, byte *dout, byte pd_sck, byte gain) {
 		pinMode(DOUT[i], INPUT);
 	}
 	set_gain(gain);
-
 	OFFSETS = (long *) malloc(COUNT*sizeof(long));
-
 	for (int i=0; i<COUNT; ++i) {
 		OFFSETS[i] = 0;
 	}
@@ -61,13 +65,13 @@ byte HX711MULTI::get_count() {
 //		i.e. a 'best recently seen stability'. Keep it up-to-date automatically by updating it with every read. (reads will probably need to be time-aware)
 
 bool HX711MULTI::tare(byte times, uint16_t tolerance) {
+	delay(1000);
 	//TODO: change this implementation to use a smarter read strategy. 
 	//		right now samples are read 'times' times, but only the last is used (the multiple samples)
 	//		are just being used to verify the spread is < tolerance.
 	//		
 	//		This should be done by creating a smarter multiple-reads function which returns a struct with values and metadata (number of good samples, standard deviation, etc.) 
 	int i,j;
-
 	long values[COUNT];
 
 	long minValues[COUNT];
@@ -118,13 +122,13 @@ bool HX711MULTI::tare(byte times, uint16_t tolerance) {
 //reads from all cahnnels and sets the values into the passed long array pointer (which must have at least 'count' cells allocated)
 //if you are only reading to toggle the line, and not to get values (such as in the case of setting gains) you can pass NULL.
 void HX711MULTI::read(long *result) {
-    
-    readRaw(result);
-    
-    // Datasheet indicates the value is returned as a two's complement value, so 'stretch' the 24th bit to fit into 32 bits. 
+
+	readRaw(result);
+
+	// Datasheet indicates the value is returned as a two's complement value, so 'stretch' the 24th bit to fit into 32 bits. 
 	if (NULL!=result) {
 		for (int j = 0; j < COUNT; ++j) {
-		    result[j] -= OFFSETS[j];   	
+			result[j] -= OFFSETS[j];   	
 		}
 	}
 }
@@ -145,24 +149,24 @@ void HX711MULTI::readRaw(long *result) {
 		}
 		digitalWrite(PD_SCK, LOW);
 	}
-   
+
 	// set the channel and the gain factor for the next reading using the clock pin
 	for (i = 0; i < GAIN; ++i) {
 		digitalWrite(PD_SCK, HIGH);
 		digitalWrite(PD_SCK, LOW);
 	}
 
-    // Datasheet indicates the value is returned as a two's complement value, so 'stretch' the 24th bit to fit into 32 bits. 
-    if (NULL!=result) {
-	    for (j = 0; j < COUNT; ++j) {
-	    	if ( ( result[j] & 0x00800000 ) ) {
-	    		result[j] |= 0xFF000000;
-	    	} else {
-	    		result[j] &= 0x00FFFFFF; //required in lieu of re-setting the value to zero before shifting bits in.
-	    	}
-	    } 
+	// Datasheet indicates the value is returned as a two's complement value, so 'stretch' the 24th bit to fit into 32 bits. 
+	if (NULL!=result) {
+		for (j = 0; j < COUNT; ++j) {
+			if ( ( result[j] & 0x00800000 ) ) {
+				result[j] |= 0xFF000000;
+			} else {
+				result[j] &= 0x00FFFFFF; //required in lieu of re-setting the value to zero before shifting bits in.
+			}
+		} 
 
-    }
+	}
 }
 
 void HX711MULTI::setDebugEnable(bool debugEnable) {

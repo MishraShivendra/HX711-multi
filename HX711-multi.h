@@ -25,12 +25,14 @@ class HX711MULTI
 		// channel selection is made by passing the appropriate gain: 128 or 64 for channel A, 32 for channel B
 		// count: the number of channels
 		// dout: an array of pin numbers, of length 'count', one entry per channel
-		HX711MULTI(int count, byte *dout, byte pd_sck, byte gain = 128);
+		HX711MULTI();
 
 		virtual ~HX711MULTI();
 
 		//returns the number of channels
 		byte get_count();
+
+		void setup(int count, byte *dout, byte pd_sck, byte gain = 128);
 
 		// check if HX711 is ready
 		// from the datasheet: When output data is not ready for retrieval, digital output pin DOUT is high. Serial clock
@@ -46,7 +48,7 @@ class HX711MULTI
 		void read(long *result = NULL);
 
 		// same as read, but does not offset the values according to the tare
-		void HX711MULTI::readRaw(long *result = NULL);
+		void readRaw(long *result = NULL);
 
 		// set the OFFSET value for tare weight
 		// times: how many times to read the tare value
